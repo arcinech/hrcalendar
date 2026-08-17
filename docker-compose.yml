@@ -36,7 +36,7 @@ services:
   app:
     image: oven/bun:latest
     container_name: vacation-planner-app
-    restart: no
+    restart: unless-stopped
     init: true
     working_dir: /workspace/app
     user: "${APP_UID:-1000}:${APP_GID:-1000}"
@@ -77,8 +77,8 @@ services:
     image: nginx:1.27-alpine
     container_name: vacation-planner-web
     restart: unless-stopped
-    profiles:
-      - web
+    # profiles:
+    #   - web
     depends_on:
       - app
     volumes:
