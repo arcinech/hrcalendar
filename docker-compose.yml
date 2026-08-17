@@ -1,0 +1,87 @@
+services:
+  database:
+    image: postgres:17-alpine
+    container_name: vacation-planner-database
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - vacation-planner
+
+  app:
+    image: oven/bun:latest
+    container_name: vacation-planner-app
+    restart: unless-stopped
+    init: true
+    working_dir: /workspace/app
+    user: "${APP_UID:-1000}:${APP_GID:-1000}"
+    env_file:
+      - ./.env
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST:-true}
+    volumes:
+      - ./app:/workspace/app
+      - app_node_modules:/workspace/app/node_modules
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        if [ -f package.json ]; then
+          bun install
+          exec bun run dev --hostname 0.0.0.0
+        else
+          echo "No T3 app found in ./app."
+          echo "Create it manually, for example:"
+          echo "  bun create t3-app@latest ./app"
+          exec tail -f /dev/null
+        fi
+    networks:
+      - vacation-planner
+
+  web:
+    image: nginx:1.27-alpine
+    container_name: vacation-planner-web
+    restart: unless-stopped
+    profiles:
+      - web
+    depends_on:
+      - app
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    networks:
+      - vacation-planner
+
+volumes:
+  app_node_modules:
+
+networks:
+  vacation-planner:
+    driver: bridge
