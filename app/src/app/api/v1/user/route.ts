@@ -13,11 +13,11 @@ const createUserSchema = z.object({
   employeeNumber: z.string().min(1).max(100).nullable(),
 });
 
-export async function GET() {
+async function getUserId() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json(
+    throw NextResponse.json(
       {
         error: "Unauthorized",
       },
@@ -25,9 +25,15 @@ export async function GET() {
     );
   }
 
+  return { ...session.user, id: session.user.id };
+}
+
+export async function GET() {
+  const userAuth = await getUserId();
+
   const user = await db.user.findUnique({
     where: {
-      id: session.user.id,
+      id: userAuth.id,
     },
     select: {
       id: true,
@@ -52,12 +58,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getUserId();
 
-  if (session.user.role !== "ROLE_HR") {
+  if (session.role !== "ROLE_HR") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -66,7 +69,7 @@ export async function POST(request: NextRequest) {
   const parsed = createUserSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
+    throw NextResponse.json(
       {
         error: "Invalid request data",
         details: parsed.error.flatten(),
