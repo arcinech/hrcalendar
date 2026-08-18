@@ -398,7 +398,6 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
-  ActivationToken: 'ActivationToken',
   Entitlement: 'Entitlement',
   LeaveRequest: 'LeaveRequest',
   LeaveRequestDay: 'LeaveRequestDay',
@@ -420,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "activationToken" | "entitlement" | "leaveRequest" | "leaveRequestDay" | "workCalendarOverride" | "entitlementDeadlineSnapshot" | "auditLog"
+    modelProps: "user" | "entitlement" | "leaveRequest" | "leaveRequestDay" | "workCalendarOverride" | "entitlementDeadlineSnapshot" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -495,80 +494,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
-        }
-      }
-    }
-    ActivationToken: {
-      payload: Prisma.$ActivationTokenPayload<ExtArgs>
-      fields: Prisma.ActivationTokenFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.ActivationTokenFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.ActivationTokenFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>
-        }
-        findFirst: {
-          args: Prisma.ActivationTokenFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.ActivationTokenFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>
-        }
-        findMany: {
-          args: Prisma.ActivationTokenFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>[]
-        }
-        create: {
-          args: Prisma.ActivationTokenCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>
-        }
-        createMany: {
-          args: Prisma.ActivationTokenCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.ActivationTokenCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>[]
-        }
-        delete: {
-          args: Prisma.ActivationTokenDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>
-        }
-        update: {
-          args: Prisma.ActivationTokenUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>
-        }
-        deleteMany: {
-          args: Prisma.ActivationTokenDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.ActivationTokenUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.ActivationTokenUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>[]
-        }
-        upsert: {
-          args: Prisma.ActivationTokenUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ActivationTokenPayload>
-        }
-        aggregate: {
-          args: Prisma.ActivationTokenAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateActivationToken>
-        }
-        groupBy: {
-          args: Prisma.ActivationTokenGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ActivationTokenGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.ActivationTokenCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ActivationTokenCountAggregateOutputType> | number
         }
       }
     }
@@ -1059,6 +984,7 @@ export const UserScalarFieldEnum = {
   id: 'id',
   email: 'email',
   passwordHash: 'passwordHash',
+  mustChangePassword: 'mustChangePassword',
   firstName: 'firstName',
   lastName: 'lastName',
   employeeNumber: 'employeeNumber',
@@ -1070,19 +996,6 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
-
-
-export const ActivationTokenScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  tokenHash: 'tokenHash',
-  expiresAt: 'expiresAt',
-  usedAt: 'usedAt',
-  revokedAt: 'revokedAt',
-  createdAt: 'createdAt'
-} as const
-
-export type ActivationTokenScalarFieldEnum = (typeof ActivationTokenScalarFieldEnum)[keyof typeof ActivationTokenScalarFieldEnum]
 
 
 export const EntitlementScalarFieldEnum = {
@@ -1233,6 +1146,13 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'UserRole'
  */
 export type EnumUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserRole'>
@@ -1313,13 +1233,6 @@ export type EnumLeaveStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'LeaveStatus[]'
  */
 export type ListEnumLeaveStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeaveStatus[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 
@@ -1516,7 +1429,6 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
-  activationToken?: Prisma.ActivationTokenOmit
   entitlement?: Prisma.EntitlementOmit
   leaveRequest?: Prisma.LeaveRequestOmit
   leaveRequestDay?: Prisma.LeaveRequestDayOmit

@@ -9,7 +9,6 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
-export type * from './models/ActivationToken'
 export type * from './models/Entitlement'
 export type * from './models/LeaveRequest'
 export type * from './models/LeaveRequestDay'

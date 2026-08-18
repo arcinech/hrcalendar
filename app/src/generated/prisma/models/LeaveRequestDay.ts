@@ -481,10 +481,6 @@ export type LeaveRequestDayUncheckedUpdateManyWithoutLeaveRequestNestedInput = {
   deleteMany?: Prisma.LeaveRequestDayScalarWhereInput | Prisma.LeaveRequestDayScalarWhereInput[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type NullableIntFieldUpdateOperationsInput = {
   set?: number | null
   increment?: number
