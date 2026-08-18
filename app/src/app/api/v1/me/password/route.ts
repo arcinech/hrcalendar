@@ -27,6 +27,7 @@ const createPasswordSchema = z.object({
 
 export async function PATCH(request: NextRequest) {
     const userAuth = await getUserId();
+
     if (!userAuth) {
         return new Response("Unauthorized", { status: 401 });
     }
@@ -68,12 +69,19 @@ export async function PATCH(request: NextRequest) {
         },
     });
 
+
     if (!user) {
         return NextResponse.json(
             { error: "User not found" },
             { status: 404 }
         );
     }
+
+    const passwordValid = await verifyPassword(
+  currentPassword,
+  user.passwordHash,
+);
+
 
     if (!user.passwordHash) {
         return NextResponse.json(
@@ -84,5 +92,26 @@ export async function PATCH(request: NextRequest) {
 
     const newPasswordHash = await hashPassword(newPassword);
 
+    await db.user.update({
+        where: {
+            id: userAuth.id,
+        },
+        data: {
+            passwordHash: newPasswordHash,
+            mustChangePassword: false,
+            temporaryPassword: null,
+            status: "ACTIVE",
+        },
+        select: {
+            id: true,
+            email: true,
+
+        }
+        });
+
+    return NextResponse.json({
+        message: "Password updated successfully",
+        status: 201
+    })
 
 };
