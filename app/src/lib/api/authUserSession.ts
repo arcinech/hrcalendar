@@ -2,25 +2,40 @@
 import { NextResponse } from "next/server";
 import { auth } from "~/server/auth";
 
-export async function getUserId() {
-  const session = await auth();
+export async function getUser() {
+	const authUser = await auth();
 
-  if (!session?.user?.id) {
-    throw NextResponse.json(
-      {
-        error: "Unauthorized",
-      },
-      { status: 401 },
-    );
-  }
+	if (!authUser?.user?.id) {
+		return {
+			error: "Unauthorized",
+			status: 401,
+			success: false as const,
+		};
+	}
 
-  return { ...session.user, id: session.user.id };
+	return {
+		success: true as const,
+		user: { ...authUser.user, id: authUser.user.id },
+	};
 }
 
 export async function getUserHR() {
-  const user = await getUserId();
+	const authUser = await getUser();
 
-  if (user.role !== "ROLE_HR") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+	if (!authUser.success) {
+		return authUser;
+	}
+
+	if (authUser.user.role !== "ROLE_HR") {
+		return {
+			success: false as const,
+			error: "Forbidden",
+			status: 403,
+		};
+	}
+
+	return {
+		success: true as const,
+		user: { ...authUser.user, id: authUser.user.id },
+	};
 }

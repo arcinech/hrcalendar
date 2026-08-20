@@ -1,89 +1,101 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getSession, signIn } from "next-auth/react";
+import { useState } from "react";
 
 export default function LoginPage() {
-  const router = useRouter();
+	const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [error, setError] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+	async function handleSubmit(event: { preventDefault: () => void }) {
+		event.preventDefault();
 
-    setLoading(true);
-    setError(null);
+		setLoading(true);
+		setError(null);
 
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+		try {
+			const result = await signIn("credentials", {
+				email,
+				password,
+				redirect: false,
+			});
 
-      if (result?.error) {
-        setError("Invalid email or password");
-        return;
-      }
+			if (result?.error) {
+				setError("Invalid email or password");
+				return;
+			}
 
-      router.push("/");
-      router.refresh();
-    } finally {
-      setLoading(false);
-    }
-  }
+			const session = await getSession();
 
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold">Sign in</h1>
+			if (!session?.user) {
+				setError("Could not load session");
+				return;
+			}
 
-        <div>
-          <label htmlFor="email" className="mb-1 block">
-            Email
-          </label>
+			if (session.user.mustChangePassword) {
+				router.replace("/forcepasswordchange");
+				return;
+			}
 
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
+			router.push("/");
+			router.refresh();
+		} finally {
+			setLoading(false);
+		}
+	}
 
-        <div>
-          <label htmlFor="password" className="mb-1 block">
-            Password
-          </label>
+	return (
+		<main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+			<form className="w-full max-w-sm space-y-4" onSubmit={handleSubmit}>
+				<h1 className="font-semibold text-2xl">Sign in</h1>
 
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            className="w-full rounded border px-3 py-2"
-          />
-        </div>
+				<div>
+					<label className="mb-1 block" htmlFor="email">
+						Email
+					</label>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+					<input
+						autoComplete="email"
+						className="w-full rounded border px-3 py-2"
+						id="email"
+						onChange={(event) => setEmail(event.target.value)}
+						required
+						type="email"
+						value={email}
+					/>
+				</div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded border px-4 py-2"
-        >
-          {loading ? "Signing in..." : "Sign in"}
-        </button>
-      </form>
-    </main>
-  );
+				<div>
+					<label className="mb-1 block" htmlFor="password">
+						Password
+					</label>
+
+					<input
+						autoComplete="current-password"
+						className="w-full rounded border px-3 py-2"
+						id="password"
+						onChange={(event) => setPassword(event.target.value)}
+						required
+						type="password"
+						value={password}
+					/>
+				</div>
+
+				{error && <p className="text-red-600 text-sm">{error}</p>}
+
+				<button
+					className="w-full rounded border px-4 py-2"
+					disabled={loading}
+					type="submit"
+				>
+					{loading ? "Signing in..." : "Sign in"}
+				</button>
+			</form>
+		</main>
+	);
 }

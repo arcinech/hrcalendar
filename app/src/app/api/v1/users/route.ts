@@ -21,7 +21,6 @@ export async function GET() {
     const userAuth = await getUserHR();
 
     if(!userAuth) return null;
-
     const users = await db.user.findMany();
 
     if (!users) {

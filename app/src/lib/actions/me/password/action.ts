@@ -1,0 +1,126 @@
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getUser } from "~/lib/api/authUserSession";
+import { signOut } from "~/server/auth";
+import { hashPassword, verifyPassword } from "~/server/auth/password";
+import { db } from "~/server/db";
+
+// {
+//   "currentPassword": "temporary-password",
+//   "newPassword": "new-secure-password"
+// }
+
+const createPasswordSchema = z.object({
+	currentPassword: z.string().min(8).max(100),
+	newPassword: z
+		.string()
+		.min(8)
+		.max(100)
+		.refine((password) => /[A-Z]/.test(password), {
+			message: "Need at least one uppercase letter",
+		})
+		.refine((password) => /[a-z]/.test(password), {
+			message: "Need at least one lowercase letter",
+		})
+		.refine((password) => /[0-9]/.test(password), {
+			message: "Need at least one number",
+		})
+		.refine((password) => /[!@#$%^&*]/.test(password), {
+			message: "Need at least one    special character",
+		}),
+});
+
+export async function changePassword(request: NextRequest) {
+	"use server";
+	const userAuth = await getUser();
+
+	if (!userAuth || !userAuth.success) {
+		return {
+			error: "Unauthorized",
+			status: 401,
+		};
+	}
+
+	let body: unknown;
+	try {
+		body = await request.json();
+	} catch {
+		return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+	}
+
+	const { currentPassword, newPassword } = createPasswordSchema.parse(body);
+
+	if (!currentPassword || !newPassword) {
+		return NextResponse.json(
+			{ error: "Current password and new password are required" },
+			{ status: 400 },
+		);
+	}
+
+	if (currentPassword === newPassword) {
+		return NextResponse.json(
+			{
+				error: "New password cannot be the same as the current password",
+			},
+			{ status: 400 },
+		);
+	}
+
+	const user = await db.user.findUnique({
+		where: {
+			id: userAuth.user.id,
+		},
+		select: {
+			temporaryPassword: true,
+			passwordHash: true,
+			mustChangePassword: true,
+		},
+	});
+
+	if (!user) {
+		return NextResponse.json({ error: "User not found" }, { status: 404 });
+	}
+
+	if (!user.passwordHash) {
+		return NextResponse.json({ error: "User not found" }, { status: 404 });
+	}
+
+	const passwordValid = await verifyPassword(
+		currentPassword,
+		user.passwordHash,
+	);
+
+	if (!passwordValid) {
+		return NextResponse.json(
+			{ error: "Current password is incorrect" },
+			{ status: 401 },
+		);
+	}
+
+	const newPasswordHash = await hashPassword(newPassword);
+
+	await db.user.update({
+		where: {
+			id: userAuth.id,
+		},
+		data: {
+			passwordHash: newPasswordHash,
+			mustChangePassword: false,
+			temporaryPassword: null,
+			status: "ACTIVE",
+		},
+		select: {
+			id: true,
+			email: true,
+		},
+	});
+
+	await signOut({
+		redirectTo: "/login",
+	});
+
+	return NextResponse.json({
+		message: "Password updated successfully",
+		status: 201,
+	});
+}
