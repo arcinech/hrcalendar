@@ -1,5 +1,5 @@
 "use server";
-import { NextResponse } from "next/server";
+import { unauthorized } from "next/navigation";
 import { z } from "zod";
 import { getUser } from "~/lib/api/authUserSession";
 import { hashPassword, verifyPassword } from "~/server/auth/password";
@@ -38,18 +38,30 @@ type ChangePasswordState = {
 	status: number;
 };
 
+export const defaultState: ChangePasswordState = {
+	success: false,
+	error: null,
+	message: null,
+	status: 0,
+};
+
 export async function changePassword(
 	previousState: ChangePasswordState,
 	formData: FormData,
 ) {
 	const userAuth = await getUser();
 
+	if (!userAuth?.user?.id) {
+		unauthorized();
+	}
+
 	if (
 		!formData.has("currentPassword") ||
 		!formData.has("newPassword") ||
-		!formData
+		!formData.has("confirmPassword")
 	) {
 		return {
+			...defaultState,
 			error: "Current password and new password are required",
 			status: 400,
 		};
@@ -57,20 +69,22 @@ export async function changePassword(
 
 	const parsed = changePasswordSchema.safeParse(Object.fromEntries(formData));
 
-	if (!parsed.success) return { error: "Invalid request data", status: 422 };
+	if (!parsed.success)
+		return { ...defaultState, error: "Invalid request data", status: 422 };
 
 	const { currentPassword, newPassword, confirmPassword } = parsed.data;
 
 	if (!currentPassword || !newPassword || !confirmPassword) {
-		return { error: "Invalid request data", status: 422 };
+		return { ...defaultState, error: "Invalid request data", status: 422 };
 	}
 
 	if (confirmPassword !== newPassword) {
-		return { error: "Invalid request data", status: 422 };
+		return { ...defaultState, error: "Invalid request data", status: 422 };
 	}
 
 	if (currentPassword === newPassword) {
 		return {
+			...defaultState,
 			error: "New password cannot be the same as the current password",
 			status: 400,
 		};
@@ -78,9 +92,10 @@ export async function changePassword(
 
 	const user = await db.user.findUnique({
 		where: {
-			id: userAuth.id,
+			id: userAuth.user.id,
 		},
 		select: {
+			id: true,
 			temporaryPassword: true,
 			passwordHash: true,
 			mustChangePassword: true,
@@ -88,11 +103,11 @@ export async function changePassword(
 	});
 
 	if (!user) {
-		return { error: "User not found", status: 404 };
+		return { ...defaultState, error: "User not found", status: 404 };
 	}
 
-	if (!user.passwordHash) {
-		return { error: "User not found", status: 404 };
+	if (!user.passwordHash || !user.id) {
+		return { ...defaultState, error: "User not found", status: 404 };
 	}
 
 	const passwordValid = await verifyPassword(
@@ -101,14 +116,18 @@ export async function changePassword(
 	);
 
 	if (!passwordValid) {
-		return { error: "Current password is incorrect", status: 401 };
+		return {
+			...defaultState,
+			error: "Current password is incorrect",
+			status: 401,
+		};
 	}
 
 	const newPasswordHash = await hashPassword(newPassword);
 
 	await db.user.update({
 		where: {
-			id: userAuth.id,
+			id: user.id,
 		},
 		data: {
 			passwordHash: newPasswordHash,
@@ -123,6 +142,7 @@ export async function changePassword(
 	});
 
 	return {
+		...defaultState,
 		message: "Password updated successfully",
 		status: 201,
 		success: true,

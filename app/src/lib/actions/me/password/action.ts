@@ -101,7 +101,7 @@ export async function changePassword(request: NextRequest) {
 
 	await db.user.update({
 		where: {
-			id: userAuth.id,
+			id: userAuth.user.id,
 		},
 		data: {
 			passwordHash: newPasswordHash,
