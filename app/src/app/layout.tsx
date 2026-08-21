@@ -2,6 +2,8 @@ import "~/styles/globals.css";
 
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { Suspense } from "react";
+import NavBar from "~/components/ui/navBar";
 
 export const metadata: Metadata = {
 	title: "Create T3 App",
@@ -19,7 +21,13 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html className={`${geist.variable}`} lang="en">
-			<body>{children}</body>
+			<body
+				className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white"
+				lang="en"
+			>
+				<NavBar />
+				<Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+			</body>
 		</html>
 	);
 }

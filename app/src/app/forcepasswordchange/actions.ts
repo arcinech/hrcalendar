@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getUser } from "~/lib/api/authUserSession";
 import { hashPassword, verifyPassword } from "~/server/auth/password";
 import { db } from "~/server/db";
+import { type ChangePasswordState, defaultState } from "./types";
 
 const changePasswordSchema = z
 	.object({
@@ -30,20 +31,6 @@ const changePasswordSchema = z
 		path: ["confirmPassword"],
 		message: "Passwords do not match",
 	});
-
-type ChangePasswordState = {
-	success?: boolean | false;
-	error?: string | null;
-	message?: string | null;
-	status: number;
-};
-
-export const defaultState: ChangePasswordState = {
-	success: false,
-	error: null,
-	message: null,
-	status: 0,
-};
 
 export async function changePassword(
 	previousState: ChangePasswordState,
@@ -96,7 +83,6 @@ export async function changePassword(
 		},
 		select: {
 			id: true,
-			temporaryPassword: true,
 			passwordHash: true,
 			mustChangePassword: true,
 		},
@@ -111,8 +97,8 @@ export async function changePassword(
 	}
 
 	const passwordValid = await verifyPassword(
-		currentPassword,
 		user.passwordHash,
+		currentPassword,
 	);
 
 	if (!passwordValid) {
@@ -132,7 +118,6 @@ export async function changePassword(
 		data: {
 			passwordHash: newPasswordHash,
 			mustChangePassword: false,
-			temporaryPassword: null,
 			status: "ACTIVE",
 		},
 		select: {

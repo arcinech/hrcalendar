@@ -34,7 +34,7 @@ export async function changePassword(request: NextRequest) {
 	"use server";
 	const userAuth = await getUser();
 
-	if (!userAuth || !userAuth.success) {
+	if (!userAuth?.success) {
 		return {
 			error: "Unauthorized",
 			status: 401,

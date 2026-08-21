@@ -1,32 +1,35 @@
 "use server";
+import { TreesIcon } from "lucide-react";
 import { z } from "zod";
 import { LeaveType } from "~/generated/prisma/client";
 import { getUser } from "~/lib/api/authUserSession";
 import { db } from "~/server/db";
+import { initialState } from "~/types/actionFormTypes";
 
 export async function myLeaves() {
 	const session = await getUser();
 
-	const myLeaves = await db.leaveRequest.findMany({
+	const leaves = await db.leaveRequest.findMany({
 		where: {
 			userId: session.user.id,
 		},
+		select: {
+			id: true,
+			startsOn: true,
+			endsOn: true,
+			reason: true,
+			status: true,
+			publicNote: true,
+		},
 	});
 
-	return myLeaves;
+	return leaves.map((myLeave) => ({
+		...myLeave,
+		startsOn: myLeave.startsOn.toISOString().slice(0, 10),
+		endsOn: myLeave.endsOn.toISOString().slice(0, 10),
+	}));
 }
 
-type PossibleStates = {
-	error?: string | null;
-	message?: string | null;
-	status: number;
-};
-
-export const defaultState: PossibleStates = {
-	error: null,
-	message: null,
-	status: 0,
-};
 //Create new leave
 const newLeaveSchema = z.object({
 	startData: z.date(),
@@ -41,7 +44,7 @@ export async function newLeave(formData: FormData) {
 
 	if (!session)
 		return {
-			...defaultState,
+			...initialState,
 			error: "Could not authenticate session",
 			code: 401,
 		};
@@ -53,7 +56,7 @@ export async function newLeave(formData: FormData) {
 		!formData.has("endDate")
 	) {
 		return {
-			...defaultState,
+			...initialState,
 			error: "Not all required fields filled",
 			status: 400,
 		};
@@ -62,7 +65,7 @@ export async function newLeave(formData: FormData) {
 	const parsed = newLeaveSchema.safeParse(formData);
 
 	if (parsed?.error)
-		return { ...defaultState, error: "Invalid request data", status: 422 };
+		return { ...initialState, error: "Invalid request data", status: 422 };
 
 	const user = await db.user.findUnique({ where: { id: session.user.id } });
 	if (!user?.id) return null;
@@ -79,7 +82,7 @@ export async function newLeave(formData: FormData) {
 	});
 
 	return {
-		...defaultState,
+		...initialState,
 		message: "Leave is pending",
 		status: 200,
 	};

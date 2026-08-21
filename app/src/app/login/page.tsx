@@ -50,7 +50,7 @@ export default function LoginPage() {
 	}
 
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
+		<main>
 			<form className="w-full max-w-sm space-y-4" onSubmit={handleSubmit}>
 				<h1 className="font-semibold text-2xl">Sign in</h1>
 

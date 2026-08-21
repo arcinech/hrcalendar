@@ -77,18 +77,24 @@ export async function PATCH(request: NextRequest) {
         );
     }
 
-    const passwordValid = await verifyPassword(
-  currentPassword,
-  user.passwordHash,
-);
-
-
     if (!user.passwordHash) {
         return NextResponse.json(
             { error: "User not found" },
             { status: 404 }
         );
     }
+
+    const passwordValid = await verifyPassword(
+        currentPassword,
+        user.passwordHash,
+    );
+
+    if (!passwordValid) {
+  return NextResponse.json(
+    { error: "Current password is incorrect" },
+    { status: 401 },
+  );
+}
 
     const newPasswordHash = await hashPassword(newPassword);
 

@@ -30,7 +30,7 @@ export async function GET() {
     );
   }
 
-  if (user.status !== "ARCHIVED") {
+  if (user.status === "ARCHIVED") {
     return NextResponse.json(
       {
         error: "User is archived",
